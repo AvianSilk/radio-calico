@@ -12,6 +12,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write
 
 jobs:
   claude-review:
@@ -21,7 +22,7 @@ jobs:
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
+          direct_prompt: |
             Review this pull request. Analyse the diff for:
             - Correctness and potential bugs
             - Code quality and adherence to the conventions in CLAUDE.md
