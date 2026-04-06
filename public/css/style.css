@@ -14,7 +14,7 @@
 
 body {
   min-height: 100vh;
-  background: var(--dark-bg);
+  background: var(--cream);
   font-family: "Open Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 14px;
   color: var(--charcoal);
@@ -71,7 +71,7 @@ body {
 .main {
   display: flex;
   justify-content: center;
-  padding: 24px 40px 60px;
+  padding: 20px 24px 40px;
 }
 
 /* ── Player card ──────────────────────────────────────────────────────── */
@@ -81,7 +81,7 @@ body {
   max-width: 960px;
   border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
 }
 
 /* ── Two-column layout ────────────────────────────────────────────────── */
