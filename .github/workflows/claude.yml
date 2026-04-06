@@ -1,6 +1,8 @@
 name: Claude
 
 on:
+  pull_request:
+    types: [opened, synchronize]
   issue_comment:
     types: [created]
   pull_request_review_comment:
@@ -12,8 +14,24 @@ permissions:
   issues: write
 
 jobs:
-  claude:
-    if: contains(github.event.comment.body, '@claude')
+  claude-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request. Analyse the diff for:
+            - Correctness and potential bugs
+            - Code quality and adherence to the conventions in CLAUDE.md
+            - Security issues (XSS, injection, etc.)
+            - Anything that could be improved or simplified
+
+            Post your findings as a PR review comment.
+
+  claude-interactive:
+    if: github.event_name != 'pull_request' && contains(github.event.comment.body, '@claude')
     runs-on: ubuntu-latest
     steps:
       - uses: anthropics/claude-code-action@beta
