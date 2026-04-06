@@ -1,0 +1,5 @@
+node_modules/
+db/radiocalico.db
+db/radiocalico.db-wal
+db/radiocalico.db-shm
+.env
