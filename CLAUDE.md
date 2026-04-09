@@ -23,7 +23,7 @@ Server runs at `http://localhost:3000`. Override with `PORT` env var.
 
 **Stopping**: `Ctrl+C` in the terminal, or `lsof -i :3000` → `kill <PID>` if backgrounded.
 
-No test runner is configured (`npm test` is a no-op stub).
+Run tests with `npm test` (Jest). All test files live in `tests/`.
 
 ## Architecture
 
@@ -57,6 +57,18 @@ Song keys are `artist|||title`. Users are identified by IP address (`X-Forwarded
 SQLite at `db/radiocalico.db` (auto-created on first run, WAL mode, foreign keys on).
 
 **ratings** — `id, user_id, song_key, rating (1|-1), created_at, updated_at` — unique on `(user_id, song_key)`.
+
+## Tests
+
+| File | What it covers |
+|---|---|
+| `tests/ratings.api.test.js` | Backend — supertest suite for `GET /api/ratings` and `POST /api/ratings`. `db/database` is replaced with an in-memory SQLite instance via `jest.mock` so no file is touched. DB is wiped in `afterEach`. |
+| `tests/ratings.ui.test.js` | Frontend — jsdom suite for `songKey`, `applyRatingUI`, `fetchRatings`, `submitRating`, and `updateMetadata` in `public/js/main.js`. The script is loaded once per suite via `window.eval` (indirect eval so function declarations land on `global`). `fetch`, `Hls`, and `HTMLMediaElement` are mocked; `jest.useFakeTimers()` stops the metadata polling interval. |
+
+**Key gotchas to keep in mind:**
+- `afterEach` must call `jest.resetAllMocks()` (not just `clearAllMocks`) to drain the `mockResolvedValueOnce` queue; leftover entries corrupt subsequent fetch calls.
+- The `submitRating` describe uses an incrementing counter to generate a unique song key in each `beforeEach`, ensuring `updateMetadata` always changes `currentSongKey` and triggers `fetchRatings` (consuming the mock). Using a static key causes `updateMetadata` to skip `fetchRatings` on repeat runs, leaving mocks unconsumed.
+- supertest v7 requires `.set()` to be chained after the HTTP method (e.g. `.get(url).set(...)`), not before.
 
 ## GitHub
 
