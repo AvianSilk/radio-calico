@@ -40,6 +40,19 @@ npm run dev      # http://localhost:3000
 
 Song keys are formatted as `artist|||title`.
 
+## Tests
+
+```bash
+npm test   # runs the full Jest suite (99 tests across 4 files, ~0.6 s)
+```
+
+| File | Scope |
+|---|---|
+| `tests/ratings.api.test.js` | `GET /api/ratings`, `POST /api/ratings` — in-memory SQLite, no file I/O |
+| `tests/ratings.ui.test.js` | `songKey`, `applyRatingUI`, `fetchRatings`, `submitRating`, `updateMetadata` |
+| `tests/player.ui.test.js` | `formatTime`, audio events, volume slider, play/pause button, elapsed timer |
+| `tests/metadata.ui.test.js` | `fetchMetadata` (URL, album art, error handling), `updateMetadata` edge cases |
+
 ## Stream sources
 
 | Resource | URL |

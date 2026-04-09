@@ -63,11 +63,17 @@ SQLite at `db/radiocalico.db` (auto-created on first run, WAL mode, foreign keys
 | File | What it covers |
 |---|---|
 | `tests/ratings.api.test.js` | Backend — supertest suite for `GET /api/ratings` and `POST /api/ratings`. `db/database` is replaced with an in-memory SQLite instance via `jest.mock` so no file is touched. DB is wiped in `afterEach`. |
-| `tests/ratings.ui.test.js` | Frontend — jsdom suite for `songKey`, `applyRatingUI`, `fetchRatings`, `submitRating`, and `updateMetadata` in `public/js/main.js`. The script is loaded once per suite via `window.eval` (indirect eval so function declarations land on `global`). `fetch`, `Hls`, and `HTMLMediaElement` are mocked; `jest.useFakeTimers()` stops the metadata polling interval. |
+| `tests/ratings.ui.test.js` | Frontend — jsdom suite for `songKey`, `applyRatingUI`, `fetchRatings`, `submitRating`, and `updateMetadata` (happy path, tag/history/quality rendering, song-change detection). |
+| `tests/player.ui.test.js` | Frontend — jsdom suite for `formatTime`, `setStatus`, `setPlaying`, audio event listeners (`playing`/`waiting`/`pause`), volume slider, play/pause button (both states), and elapsed timer (`startTimer`, `stopTimer`, `pauseTimerDisplay`). |
+| `tests/metadata.ui.test.js` | Frontend — jsdom suite for `fetchMetadata` (URL shape, cache-bust timestamp, album-art update, non-ok/error handling) and `updateMetadata` edge cases (missing title/artist/album/date, partial history slots, tag independence). |
+
+All frontend test files share the same loading strategy: `window.eval(script)` in `beforeAll` (indirect eval — function declarations land on `global`), `Hls` / `fetch` / `HTMLMediaElement` mocked, `jest.useFakeTimers()` to freeze the metadata polling interval.
 
 **Key gotchas to keep in mind:**
 - `afterEach` must call `jest.resetAllMocks()` (not just `clearAllMocks`) to drain the `mockResolvedValueOnce` queue; leftover entries corrupt subsequent fetch calls.
 - The `submitRating` describe uses an incrementing counter to generate a unique song key in each `beforeEach`, ensuring `updateMetadata` always changes `currentSongKey` and triggers `fetchRatings` (consuming the mock). Using a static key causes `updateMetadata` to skip `fetchRatings` on repeat runs, leaving mocks unconsumed.
+- Player tests use `clearAllMocks()` (not `reset`) so the Hls constructor mock and `isSupported` implementation are preserved across tests.
+- Timer tests mock `performance.now` via `jest.spyOn` — provide the value captured by `startTimer` as `mockReturnValueOnce(0)`, then `mockReturnValue(elapsedMs)` for the interval callback.
 - supertest v7 requires `.set()` to be chained after the HTTP method (e.g. `.get(url).set(...)`), not before.
 
 ## GitHub
