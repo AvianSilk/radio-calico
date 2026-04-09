@@ -58,6 +58,10 @@ SQLite at `db/radiocalico.db` (auto-created on first run, WAL mode, foreign keys
 
 **ratings** — `id, user_id, song_key, rating (1|-1), created_at, updated_at` — unique on `(user_id, song_key)`.
 
+## GitHub
+
+Always assign **AvianSilk** as the assignee on every pull request (`--add-assignee AvianSilk`).
+
 ## Stack
 
 - Node.js v22, Express v5, `better-sqlite3`, nodemon (dev only)
