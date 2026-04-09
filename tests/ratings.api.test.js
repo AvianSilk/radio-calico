@@ -1,37 +1,44 @@
 'use strict';
 
-// Replace the real file-backed DB with an identical in-memory one.
-// Must be called before any require() that pulls in ../db/database.
-jest.mock('../db/database', () => {
-  const Database = require('better-sqlite3');
-  const db = new Database(':memory:');
-  db.pragma('foreign_keys = ON');
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS ratings (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id    TEXT    NOT NULL,
-      song_key   TEXT    NOT NULL,
-      rating     INTEGER NOT NULL CHECK(rating IN (1, -1)),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, song_key)
-    )
-  `);
-  return db;
-});
+// Replace the real pg Pool with a pg-mem in-memory Postgres instance.
+// The factory closes over _mockPool, which is initialised in beforeAll —
+// the closure is evaluated at call time (not at require time), so this is safe.
+let mockPool;
 
+jest.mock('../db/database', () => ({
+  query: (...args) => mockPool.query(...args),
+}));
+
+const { newDb } = require('pg-mem');
 const request = require('supertest');
 const express = require('express');
 const ratingsRouter = require('../routes/ratings');
-const db = require('../db/database');
 
 const app = express();
 app.use(express.json());
 app.use('/api/ratings', ratingsRouter);
 
+beforeAll(async () => {
+  const mem = newDb();
+  const { Pool } = mem.adapters.createPg();
+  mockPool = new Pool();
+  await mockPool.query(`
+    CREATE TABLE IF NOT EXISTS ratings (
+      id         SERIAL PRIMARY KEY,
+      user_id    TEXT        NOT NULL,
+      song_key   TEXT        NOT NULL,
+      rating     INTEGER     NOT NULL CHECK(rating IN (1, -1)),
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, song_key)
+    )
+  `);
+});
+
 // Reset table state between tests for full isolation.
-afterEach(() => {
-  db.prepare('DELETE FROM ratings').run();
+afterEach(async () => {
+  await mockPool.query('DELETE FROM ratings');
+  jest.resetAllMocks();
 });
 
 const SONG_KEY = 'Pink Floyd|||Comfortably Numb';

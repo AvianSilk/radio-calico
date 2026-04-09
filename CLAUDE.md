@@ -15,8 +15,15 @@ A web-based radio player for a live HLS audio stream. Users can listen to the st
 ## Commands
 
 ```bash
+# Without Docker (requires DATABASE_URL set)
 npm run dev   # development — nodemon auto-restarts on file save
 npm start     # production — plain node, no watching
+
+# With Docker
+./start.sh          # build + start production (detached)
+./start-dev.sh      # build + start dev with hot-reload (attached)
+./stop.sh           # stop all containers
+./stop.sh --volumes # stop and delete the postgres data volume
 ```
 
 Server runs at `http://localhost:3000`. Override with `PORT` env var.
@@ -27,7 +34,7 @@ Run tests with `npm test` (Jest). All test files live in `tests/`.
 
 ## Architecture
 
-All server-side logic lives in `server.js` (Express entry point) and `routes/`. The database connection and schema are both initialised in `db/database.js` on startup — import that module wherever DB access is needed; never open a second connection.
+All server-side logic lives in `server.js` (Express entry point) and `routes/`. The database connection is initialised in `db/database.js` on startup — import that module wherever DB access is needed; never open a second connection.
 
 All client-side logic is in one file: `public/js/main.js`. It handles HLS playback, metadata polling, and ratings in a single flat script with no build step. The page is a single HTML file served statically.
 
@@ -54,15 +61,31 @@ Song keys are `artist|||title`. Users are identified by IP address (`X-Forwarded
 
 ## Database
 
-SQLite at `db/radiocalico.db` (auto-created on first run, WAL mode, foreign keys on).
+PostgreSQL. Connection string via `DATABASE_URL` env var (required when running without Docker).
+
+Default used by Docker Compose: `postgresql://radiocalico:radiocalico@postgres:5432/radiocalico`
 
 **ratings** — `id, user_id, song_key, rating (1|-1), created_at, updated_at` — unique on `(user_id, song_key)`.
+
+Schema is created automatically on startup via `CREATE TABLE IF NOT EXISTS` in `db/database.js`.
+
+## Docker
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Multi-stage build; `dev` target (all deps, no source COPY) and `prod` target (prod deps + source) |
+| `docker-compose.yml` | `postgres` service (no profile, always started) + `prod` service (default) + `dev` service (profile: `dev`) |
+| `start.sh` | Build + `docker compose up -d` |
+| `start-dev.sh` | Build + `docker compose --profile dev up dev` (attached) |
+| `stop.sh` | `docker compose --profile dev down` (pass `--volumes` to wipe DB) |
+
+The `dev` service bind-mounts the source directory; an anonymous volume at `/app/node_modules` prevents the host's modules from shadowing the container-compiled ones.
 
 ## Tests
 
 | File | What it covers |
 |---|---|
-| `tests/ratings.api.test.js` | Backend — supertest suite for `GET /api/ratings` and `POST /api/ratings`. `db/database` is replaced with an in-memory SQLite instance via `jest.mock` so no file is touched. DB is wiped in `afterEach`. |
+| `tests/ratings.api.test.js` | Backend — supertest suite for `GET /api/ratings` and `POST /api/ratings`. `db/database` is replaced with a `pg-mem` in-memory Postgres instance via `jest.mock`. DB is wiped in `afterEach`. |
 | `tests/ratings.ui.test.js` | Frontend — jsdom suite for `songKey`, `applyRatingUI`, `fetchRatings`, `submitRating`, and `updateMetadata` (happy path, tag/history/quality rendering, song-change detection). |
 | `tests/player.ui.test.js` | Frontend — jsdom suite for `formatTime`, `setStatus`, `setPlaying`, audio event listeners (`playing`/`waiting`/`pause`), volume slider, play/pause button (both states), and elapsed timer (`startTimer`, `stopTimer`, `pauseTimerDisplay`). |
 | `tests/metadata.ui.test.js` | Frontend — jsdom suite for `fetchMetadata` (URL shape, cache-bust timestamp, album-art update, non-ok/error handling) and `updateMetadata` edge cases (missing title/artist/album/date, partial history slots, tag independence). |
@@ -75,6 +98,7 @@ All frontend test files share the same loading strategy: `window.eval(script)` i
 - Player tests use `clearAllMocks()` (not `reset`) so the Hls constructor mock and `isSupported` implementation are preserved across tests.
 - Timer tests mock `performance.now` via `jest.spyOn` — provide the value captured by `startTimer` as `mockReturnValueOnce(0)`, then `mockReturnValue(elapsedMs)` for the interval callback.
 - supertest v7 requires `.set()` to be chained after the HTTP method (e.g. `.get(url).set(...)`), not before.
+- The API test mock uses a closure (`let _mockPool`) initialised in `beforeAll` — the jest.mock factory runs at require time but the closure is evaluated at call time, so `_mockPool` is always defined when queries run.
 
 ## GitHub
 
@@ -82,7 +106,7 @@ Always assign **AvianSilk** as the assignee on every pull request (`--add-assign
 
 ## Stack
 
-- Node.js v22, Express v5, `better-sqlite3`, nodemon (dev only)
+- Node.js v22, Express v5, `pg` (PostgreSQL client), nodemon (dev only)
 - Frontend: vanilla JS + HLS.js (CDN), no bundler
 - Fonts: Montserrat + Open Sans via Google Fonts
 - Brand assets: `RadioCalicoLogoTM.png`, `RadioCalico_Style_Guide.txt` in project root

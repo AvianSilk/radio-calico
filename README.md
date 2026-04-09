@@ -18,18 +18,37 @@ A web-based radio player for a live lossless HLS audio stream.
 | Layer | Technology |
 |---|---|
 | Server | Node.js v22, Express v5 |
-| Database | SQLite via `better-sqlite3` |
+| Database | PostgreSQL via `pg` |
 | Frontend | Vanilla JS, HLS.js (CDN), no build step |
 | Fonts | Montserrat + Open Sans (Google Fonts) |
 
 ## Getting started
 
+### With Docker (recommended)
+
 ```bash
-npm install
-npm run dev      # http://localhost:3000
+./start.sh          # build + start production (http://localhost:3000)
+./start-dev.sh      # build + start dev with hot-reload
+./stop.sh           # stop all containers
+./stop.sh --volumes # stop and delete the postgres data volume
 ```
 
-`npm run dev` uses nodemon and auto-restarts on file changes. Use `npm start` for production (plain node, no watching).
+A `PORT` env var overrides the default port:
+
+```bash
+PORT=8080 ./start.sh
+```
+
+### Without Docker
+
+Requires a running PostgreSQL instance. Set `DATABASE_URL` before starting:
+
+```bash
+export DATABASE_URL=postgresql://user:password@localhost:5432/radiocalico
+npm install
+npm run dev      # http://localhost:3000  (nodemon, auto-restarts on save)
+npm start        # http://localhost:3000  (plain node, production)
+```
 
 ## API
 
@@ -46,12 +65,26 @@ Song keys are formatted as `artist|||title`.
 npm test   # runs the full Jest suite (99 tests across 4 files, ~0.6 s)
 ```
 
+The API test suite uses `pg-mem` (in-memory Postgres) — no running database required.
+
 | File | Scope |
 |---|---|
-| `tests/ratings.api.test.js` | `GET /api/ratings`, `POST /api/ratings` — in-memory SQLite, no file I/O |
+| `tests/ratings.api.test.js` | `GET /api/ratings`, `POST /api/ratings` — pg-mem in-memory Postgres, no I/O |
 | `tests/ratings.ui.test.js` | `songKey`, `applyRatingUI`, `fetchRatings`, `submitRating`, `updateMetadata` |
 | `tests/player.ui.test.js` | `formatTime`, audio events, volume slider, play/pause button, elapsed timer |
 | `tests/metadata.ui.test.js` | `fetchMetadata` (URL, album art, error handling), `updateMetadata` edge cases |
+
+## Docker details
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Multi-stage build with `dev` and `prod` targets |
+| `docker-compose.yml` | `prod` service (default) + `dev` service (profile: `dev`) + shared `postgres` |
+| `start.sh` | Build and start prod in the background |
+| `start-dev.sh` | Build and start dev attached (Ctrl+C to stop) |
+| `stop.sh` | Stop all containers; pass `--volumes` to also wipe the DB |
+
+The `DATABASE_URL` environment variable is set automatically inside containers. When running locally without Docker, set it yourself (see above).
 
 ## Stream sources
 
