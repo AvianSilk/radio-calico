@@ -34,11 +34,13 @@ Run tests with `npm test` (Jest). All test files live in `tests/`.
 
 ## Architecture
 
+In Docker, nginx is the public-facing web server (port 80). It serves `public/` statically and proxies `/api/*` to the Express app on port 3000 (internal Docker network, never exposed). Express has no `express.static` — it handles API routes only.
+
 All server-side logic lives in `server.js` (Express entry point) and `routes/`. The database connection is initialised in `db/database.js` on startup — import that module wherever DB access is needed; never open a second connection.
 
-All client-side logic is in one file: `public/js/main.js`. It handles HLS playback, metadata polling, and ratings in a single flat script with no build step. The page is a single HTML file served statically.
+All client-side logic is in one file: `public/js/main.js`. It handles HLS playback, metadata polling, and ratings in a single flat script with no build step. The page is a single HTML file served statically by nginx.
 
-The metadata endpoint (`metadatav2.json`) is polled every 10 seconds from the client. It is never proxied through the Express server.
+The metadata endpoint (`metadatav2.json`) is polled every 10 seconds from the client. It is never proxied through Express or nginx.
 
 ## External services
 
@@ -73,13 +75,14 @@ Schema is created automatically on startup via `CREATE TABLE IF NOT EXISTS` in `
 
 | File | Purpose |
 |---|---|
-| `Dockerfile` | Multi-stage build; `dev` target (all deps, no source COPY) and `prod` target (prod deps + source) |
-| `docker-compose.yml` | `postgres` service (no profile, always started) + `prod` service (default) + `dev` service (profile: `dev`) |
-| `start.sh` | Build + `docker compose up -d` |
-| `start-dev.sh` | Build + `docker compose --profile dev up dev` (attached) |
+| `Dockerfile` | Five stages: `deps-prod`, `deps-all`, `dev` (nodemon), `prod` (Express API), `nginx` (static + proxy) |
+| `docker-compose.yml` | `postgres` + `app` (Express, internal `expose: 3000`) + `nginx` (public `ports: 80`) + `dev` (profile: `dev`) |
+| `nginx/nginx.conf` | Serves `public/` directly; proxies `/api/*` to `http://app:3000` |
+| `start.sh` | `docker compose build app nginx` + `docker compose up -d` |
+| `start-dev.sh` | `docker compose --profile dev up dev` (attached, Express on port 3000 directly) |
 | `stop.sh` | `docker compose --profile dev down` (pass `--volumes` to wipe DB) |
 
-The `dev` service bind-mounts the source directory; an anonymous volume at `/app/node_modules` prevents the host's modules from shadowing the container-compiled ones.
+The `dev` service bind-mounts the source directory; an anonymous volume at `/app/node_modules` prevents the host's modules from shadowing the container-compiled ones. nginx is not used in dev mode.
 
 ## Tests
 
@@ -106,6 +109,7 @@ Always assign **AvianSilk** as the assignee on every pull request (`--add-assign
 
 ## Stack
 
+- nginx 1.27-alpine (web server / reverse proxy)
 - Node.js v22, Express v5, `pg` (PostgreSQL client), nodemon (dev only)
 - Frontend: vanilla JS + HLS.js (CDN), no bundler
 - Fonts: Montserrat + Open Sans via Google Fonts

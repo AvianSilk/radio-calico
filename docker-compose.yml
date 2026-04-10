@@ -14,14 +14,13 @@ services:
       timeout: 5s
       retries: 10
 
-  # Production — self-contained image, DB persisted in a named volume.
-  # Usage: docker compose up [-d]
-  prod:
+  # Express API — internal only; nginx proxies /api/* to it on port 3000.
+  app:
     build:
       context: .
       target: prod
-    ports:
-      - "${PORT:-3000}:3000"
+    expose:
+      - "3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -30,7 +29,20 @@ services:
       DATABASE_URL: postgresql://radiocalico:radiocalico@postgres:5432/radiocalico
     restart: unless-stopped
 
+  # nginx — public-facing; serves static files and proxies API calls to app.
+  # Usage: docker compose up [-d]
+  nginx:
+    build:
+      context: .
+      target: nginx
+    ports:
+      - "${PORT:-80}:80"
+    depends_on:
+      - app
+    restart: unless-stopped
+
   # Development — source bind-mounted for hot-reload via nodemon.
+  # nginx is not used in dev; the app port is exposed directly for simplicity.
   # Usage: docker compose --profile dev up dev
   dev:
     build:
