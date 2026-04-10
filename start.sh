@@ -3,10 +3,11 @@
 # The app is available at http://localhost:3000 (override with PORT=XXXX ./start.sh)
 set -euo pipefail
 
-echo "Building production image..."
-docker compose build prod
+echo "Building production images (app + nginx)..."
+docker compose build app nginx
 
-echo "Starting postgres + prod..."
+echo "Starting postgres + app + nginx..."
 docker compose up -d
 
-echo "Done. Logs: docker compose logs -f prod"
+echo "Done. App is available at http://localhost:${PORT:-80}"
+echo "Logs: docker compose logs -f app nginx"

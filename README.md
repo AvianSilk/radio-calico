@@ -17,7 +17,8 @@ A web-based radio player for a live lossless HLS audio stream.
 
 | Layer | Technology |
 |---|---|
-| Server | Node.js v22, Express v5 |
+| Web server | nginx 1.27 (static files + reverse proxy) |
+| API server | Node.js v22, Express v5 |
 | Database | PostgreSQL via `pg` |
 | Frontend | Vanilla JS, HLS.js (CDN), no build step |
 | Fonts | Montserrat + Open Sans (Google Fonts) |
@@ -27,8 +28,8 @@ A web-based radio player for a live lossless HLS audio stream.
 ### With Docker (recommended)
 
 ```bash
-./start.sh          # build + start production (http://localhost:3000)
-./start-dev.sh      # build + start dev with hot-reload
+./start.sh          # build + start production (http://localhost:80)
+./start-dev.sh      # build + start dev with hot-reload (http://localhost:3000, no nginx)
 ./stop.sh           # stop all containers
 ./stop.sh --volumes # stop and delete the postgres data volume
 ```
@@ -36,8 +37,11 @@ A web-based radio player for a live lossless HLS audio stream.
 A `PORT` env var overrides the default port:
 
 ```bash
-PORT=8080 ./start.sh
+PORT=8080 ./start.sh    # nginx on :8080
+PORT=4000 ./start-dev.sh  # Express directly on :4000
 ```
+
+In production the traffic flow is: **browser → nginx:80 → (static files) or → Express:3000 (for `/api/*`)**. The Express port is never exposed outside Docker.
 
 ### Without Docker
 
@@ -49,6 +53,8 @@ npm install
 npm run dev      # http://localhost:3000  (nodemon, auto-restarts on save)
 npm start        # http://localhost:3000  (plain node, production)
 ```
+
+Note: when running without Docker, Express serves the API only — open `public/index.html` directly in a browser, or add `express.static` back to `server.js` for local testing.
 
 ## API
 
@@ -78,10 +84,11 @@ The API test suite uses `pg-mem` (in-memory Postgres) — no running database re
 
 | File | Purpose |
 |---|---|
-| `Dockerfile` | Multi-stage build with `dev` and `prod` targets |
-| `docker-compose.yml` | `prod` service (default) + `dev` service (profile: `dev`) + shared `postgres` |
-| `start.sh` | Build and start prod in the background |
-| `start-dev.sh` | Build and start dev attached (Ctrl+C to stop) |
+| `Dockerfile` | Multi-stage build: `deps-prod`, `deps-all`, `dev`, `prod` (Express), `nginx` |
+| `docker-compose.yml` | `postgres` + `app` (Express, internal only) + `nginx` (public) + `dev` (profile: `dev`) |
+| `nginx/nginx.conf` | nginx server block: static files from `public/`, `/api/*` proxied to `app:3000` |
+| `start.sh` | Build app + nginx images and start all production services in the background |
+| `start-dev.sh` | Build and start dev service attached (Ctrl+C to stop) |
 | `stop.sh` | Stop all containers; pass `--volumes` to also wipe the DB |
 
 The `DATABASE_URL` environment variable is set automatically inside containers. When running locally without Docker, set it yourself (see above).
