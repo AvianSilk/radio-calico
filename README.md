@@ -20,8 +20,8 @@ A web-based radio player for a live lossless HLS audio stream.
 | Web server | nginx 1.29 (static files + reverse proxy) |
 | API server | Node.js v22, Express v5 |
 | Database | PostgreSQL via `pg` |
-| Frontend | Vanilla JS, HLS.js (CDN), no build step |
-| Fonts | Montserrat + Open Sans (Google Fonts) |
+| Frontend | Vanilla JS, HLS.js (lazy-loaded from CDN on first play), no build step |
+| Fonts | Montserrat + Open Sans (self-hosted WOFF2 in `public/fonts/`) |
 
 ## Getting started
 

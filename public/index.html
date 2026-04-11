@@ -1,100 +1,160 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Radio Calico</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radio Calico</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <nav class="topnav">
+      <div class="topnav-inner">
+        <h1 class="topnav-title">
+          Radio
+          <picture>
+            <source srcset="/images/logo.webp" type="image/webp" />
+            <img class="topnav-logo" src="/images/logo.png" alt="" />
+          </picture>
+          Calico
+        </h1>
+        <span class="topnav-status" id="status">Stopped</span>
+      </div>
+    </nav>
 
-  <nav class="topnav">
-    <div class="topnav-inner">
-      <h1 class="topnav-title">
-        Radio
-        <img class="topnav-logo" src="/images/logo.png" alt="">
-        Calico
-      </h1>
-      <span class="topnav-status" id="status">Stopped</span>
-    </div>
-  </nav>
-
-  <main class="main">
-    <div class="player-card">
-
-      <!-- Two-column: art + info -->
-      <div class="player-layout">
-
-        <div class="art-col">
-          <img class="album-art" id="album-art"
-               src="https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg" alt="Album art">
-          <div class="visualizer" id="visualizer">
-            <span></span><span></span><span></span><span></span><span></span>
-          </div>
-        </div>
-
-        <div class="info-col">
-
-          <div class="tags" id="tags">
-            <span class="tag tag-new"    id="tag-new"      style="display:none">New</span>
-            <span class="tag tag-summer" id="tag-summer"   style="display:none">Summer</span>
-            <span class="tag tag-vg"     id="tag-vidgames" style="display:none">Video Games</span>
-          </div>
-
-          <p class="track-artist" id="meta-artist">—</p>
-          <p class="track-title"  id="meta-title">—</p>
-          <p class="track-album"  id="meta-album"></p>
-
-          <div class="quality-block">
-            <p class="quality-line" id="stream-quality">—</p>
-          </div>
-
-          <div class="rating-row">
-            <span class="rating-label">Rate this track</span>
-            <button class="rating-btn" id="btn-like" aria-label="Like">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-              <span id="count-likes">0</span>
-            </button>
-            <button class="rating-btn" id="btn-dislike" aria-label="Dislike">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
-              <span id="count-dislikes">0</span>
-            </button>
-          </div>
-
-          <div class="controls">
-            <button class="play-btn" id="playBtn" aria-label="Play">
-              <svg id="iconPlay"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-              <svg id="iconPause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            </button>
-            <span class="elapsed" id="elapsed">0:00</span>
-            <div class="volume-row">
-              <svg class="vol-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-              <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
-              <svg class="vol-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"/></svg>
+    <main class="main">
+      <div class="player-card">
+        <!-- Two-column: art + info -->
+        <div class="player-layout">
+          <div class="art-col">
+            <img
+              class="album-art"
+              id="album-art"
+              src="https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg"
+              alt="Album art"
+              fetchpriority="high"
+            />
+            <div class="visualizer" id="visualizer">
+              <span></span><span></span><span></span><span></span><span></span>
             </div>
           </div>
 
+          <div class="info-col">
+            <div class="tags" id="tags">
+              <span class="tag tag-new" id="tag-new" style="display: none"
+                >New</span
+              >
+              <span class="tag tag-summer" id="tag-summer" style="display: none"
+                >Summer</span
+              >
+              <span class="tag tag-vg" id="tag-vidgames" style="display: none"
+                >Video Games</span
+              >
+            </div>
+
+            <p class="track-artist" id="meta-artist">—</p>
+            <p class="track-title" id="meta-title">—</p>
+            <p class="track-album" id="meta-album"></p>
+
+            <div class="quality-block">
+              <p class="quality-line" id="stream-quality">—</p>
+            </div>
+
+            <div class="rating-row">
+              <span class="rating-label">Rate this track</span>
+              <button class="rating-btn" id="btn-like" aria-label="Like">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"
+                  />
+                </svg>
+                <span id="count-likes">0</span>
+              </button>
+              <button class="rating-btn" id="btn-dislike" aria-label="Dislike">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"
+                  />
+                </svg>
+                <span id="count-dislikes">0</span>
+              </button>
+            </div>
+
+            <div class="controls">
+              <button class="play-btn" id="playBtn" aria-label="Play">
+                <svg
+                  id="iconPlay"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                <svg
+                  id="iconPause"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  style="display: none"
+                >
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                </svg>
+              </button>
+              <span class="elapsed" id="elapsed">0:00</span>
+              <div class="volume-row">
+                <svg
+                  class="vol-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
+                  />
+                </svg>
+                <input
+                  type="range"
+                  id="volume"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="1"
+                />
+                <svg
+                  class="vol-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77 0-4.28-2.99-7.86-7-8.77z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="history-section">
+          <p class="history-heading">Previous tracks:</p>
+          <ol class="history-list" id="history-list">
+            <li class="history-item placeholder">
+              <span class="hist-artist">—</span>
+            </li>
+          </ol>
         </div>
       </div>
+    </main>
 
-      <!-- History -->
-      <div class="history-section">
-        <p class="history-heading">Previous tracks:</p>
-        <ol class="history-list" id="history-list">
-          <li class="history-item placeholder">
-            <span class="hist-artist">—</span>
-          </li>
-        </ol>
-      </div>
-
-    </div>
-  </main>
-
-  <audio id="audio"></audio>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
-  <script src="/js/main.js"></script>
-</body>
+    <audio id="audio"></audio>
+    <script src="/js/main.js"></script>
+  </body>
 </html>
