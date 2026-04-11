@@ -27,21 +27,33 @@ A web-based radio player for a live lossless HLS audio stream.
 
 ### With Docker (recommended)
 
+Use the Make targets for day-to-day workflow:
+
+| Command | When to use it |
+|---|---|
+| `make prod` | Deploy and run the full production stack. Starts Docker Desktop automatically if it isn't running. Builds fresh images for the Express app and nginx, then starts postgres + app + nginx in the background. Visit **http://localhost:80**. |
+| `make dev` | Active development. Starts Docker Desktop automatically if needed. Starts Express with nodemon (hot-reload on save) and postgres. Source files are bind-mounted into the container so edits take effect immediately. nginx is not used — the app is available directly at **http://localhost:3000**. Runs attached; press `Ctrl+C` to stop. |
+| `make stop` | Stop all running containers (prod or dev). |
+| `make stop VOLUMES=1` | Stop all containers **and delete the postgres data volume**. Use this to reset the database to a clean state. |
+| `make test` | Run the full Jest test suite locally. No Docker or running database needed — the API tests use an in-memory Postgres instance. |
+
+#### Changing the port
+
+Set the `PORT` environment variable before any target:
+
 ```bash
-./start.sh          # build + start production (http://localhost:80)
-./start-dev.sh      # build + start dev with hot-reload (http://localhost:3000, no nginx)
-./stop.sh           # stop all containers
-./stop.sh --volumes # stop and delete the postgres data volume
+PORT=8080 make prod    # nginx listens on :8080 instead of :80
+PORT=4000 make dev     # Express listens on :4000 instead of :3000
 ```
 
-A `PORT` env var overrides the default port:
+#### Traffic flow (production)
 
-```bash
-PORT=8080 ./start.sh    # nginx on :8080
-PORT=4000 ./start-dev.sh  # Express directly on :4000
+```
+browser → nginx:80 → public/  (static files served directly)
+                   → app:3000  (/api/* proxied to Express)
 ```
 
-In production the traffic flow is: **browser → nginx:80 → (static files) or → Express:3000 (for `/api/*`)**. The Express port is never exposed outside Docker.
+The Express port is internal to Docker and never reachable from the host in production.
 
 ### Without Docker
 
@@ -54,7 +66,7 @@ npm run dev      # http://localhost:3000  (nodemon, auto-restarts on save)
 npm start        # http://localhost:3000  (plain node, production)
 ```
 
-Note: when running without Docker, Express serves the API only — open `public/index.html` directly in a browser, or add `express.static` back to `server.js` for local testing.
+Note: without Docker, Express serves the API only — open `public/index.html` directly in a browser, or temporarily add `express.static` to `server.js` for local testing.
 
 ## API
 
@@ -68,10 +80,10 @@ Song keys are formatted as `artist|||title`.
 ## Tests
 
 ```bash
-npm test   # runs the full Jest suite (99 tests across 4 files, ~0.6 s)
+make test  # or: npm test
 ```
 
-The API test suite uses `pg-mem` (in-memory Postgres) — no running database required.
+Runs the full Jest suite (99 tests across 4 files, ~0.6 s). No Docker or running database required — the API tests use `pg-mem` (in-memory Postgres).
 
 | File | Scope |
 |---|---|
@@ -87,9 +99,7 @@ The API test suite uses `pg-mem` (in-memory Postgres) — no running database re
 | `Dockerfile` | Multi-stage build: `deps-prod`, `deps-all`, `dev`, `prod` (Express), `nginx` |
 | `docker-compose.yml` | `postgres` + `app` (Express, internal only) + `nginx` (public) + `dev` (profile: `dev`) |
 | `nginx/nginx.conf` | nginx server block: static files from `public/`, `/api/*` proxied to `app:3000` |
-| `start.sh` | Build app + nginx images and start all production services in the background |
-| `start-dev.sh` | Build and start dev service attached (Ctrl+C to stop) |
-| `stop.sh` | Stop all containers; pass `--volumes` to also wipe the DB |
+| `Makefile` | `make prod`, `make dev`, `make stop`, `make test` — the primary way to run the project |
 
 The `DATABASE_URL` environment variable is set automatically inside containers. When running locally without Docker, set it yourself (see above).
 
