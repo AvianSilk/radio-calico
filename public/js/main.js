@@ -84,6 +84,15 @@ function setPlaying(playing) {
   visualizer.classList.toggle('playing', playing);
 }
 
+function loadHlsJs(callback) {
+  if (typeof Hls !== 'undefined') { callback(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js';
+  s.onload  = callback;
+  s.onerror = () => { setStatus('Error', 'error'); stopTimer(); };
+  document.head.appendChild(s);
+}
+
 function initHls() {
   if (Hls.isSupported()) {
     hls = new Hls({ lowLatencyMode: true });
@@ -110,7 +119,7 @@ function destroyHls() {
 
 playBtn.addEventListener('click', () => {
   if (audio.paused) {
-    if (!loaded) { setStatus('Connecting…', 'loading'); initHls(); } else { audio.play(); }
+    if (!loaded) { setStatus('Connecting…', 'loading'); loadHlsJs(initHls); } else { audio.play(); }
     if (startedAt === null) startTimer(); else resumeTimerDisplay();
   } else {
     pauseTimerDisplay();

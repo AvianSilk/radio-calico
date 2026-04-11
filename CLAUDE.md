@@ -112,6 +112,6 @@ Always assign **AvianSilk** as the assignee on every pull request (`--add-assign
 
 - nginx 1.29-alpine (web server / reverse proxy)
 - Node.js v22, Express v5, `pg` (PostgreSQL client), nodemon (dev only)
-- Frontend: vanilla JS + HLS.js (CDN), no bundler
-- Fonts: Montserrat + Open Sans via Google Fonts
+- Frontend: vanilla JS + HLS.js (lazy-loaded from CDN on first play click), no bundler
+- Fonts: Montserrat + Open Sans, self-hosted WOFF2 in `public/fonts/`
 - Brand assets: `RadioCalicoLogoTM.png`, `RadioCalico_Style_Guide.txt` in project root
