@@ -98,11 +98,12 @@ Runs the full Jest suite (99 tests across 4 files, ~0.6 s). No Docker or running
 
 | File | Purpose |
 |---|---|
-| `Dockerfile` | Multi-stage build: `deps-prod`, `deps-all`, `dev`, `prod` (Express), `nginx` |
+| `Dockerfile` | Multi-stage build: `deps-prod`, `deps-all`, `dev`, `prod` (Express — npm stripped at runtime), `nginx` |
 | `docker-compose.yml` | `postgres` + `app` (Express, internal only) + `nginx` (public) + `dev` (profile: `dev`) |
 | `nginx/nginx.conf` | nginx server block: static files from `public/`, `/api/*` proxied to `app:3000` |
 | `Makefile` | `make prod`, `make dev`, `make stop`, `make test`, `make audit`, `make scan` — the primary way to run the project |
 | `.github/workflows/ci.yml` | CI pipeline: `test` job (Jest) and `security` job (npm audit + trivy + semgrep + gitleaks) run in parallel on every push and PR |
+| `.trivyignore` | Suppressed trivy CVEs — OS-level findings in the Alpine base image that are pending upstream fixes |
 
 The `DATABASE_URL` environment variable is set automatically inside containers. When running locally without Docker, set it yourself (see above).
 
