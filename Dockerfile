@@ -22,12 +22,13 @@ CMD ["npm", "run", "dev"]
 FROM node:22-alpine AS prod
 WORKDIR /app
 COPY --from=deps-prod /app/node_modules ./node_modules
-COPY package*.json ./
 COPY server.js ./
 COPY routes/ ./routes/
 COPY db/database.js ./db/
+# npm is not needed at runtime; removing it eliminates its bundled dependencies from the attack surface
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
 
 # ── nginx: serves public/ statically, proxies /api/* to the app container ─────
 FROM nginx:1.29-alpine AS nginx

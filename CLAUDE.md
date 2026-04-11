@@ -75,11 +75,12 @@ Schema is created automatically on startup via `CREATE TABLE IF NOT EXISTS` in `
 
 | File | Purpose |
 |---|---|
-| `Dockerfile` | Five stages: `deps-prod`, `deps-all`, `dev` (nodemon), `prod` (Express API), `nginx` (static + proxy) |
+| `Dockerfile` | Five stages: `deps-prod`, `deps-all`, `dev` (nodemon), `prod` (Express API — npm/npx/corepack stripped at runtime), `nginx` (static + proxy) |
 | `docker-compose.yml` | `postgres` + `app` (Express, internal `expose: 3000`) + `nginx` (public `ports: 80`) + `dev` (profile: `dev`) |
 | `nginx/nginx.conf` | Serves `public/` directly; proxies `/api/*` to `http://app:3000` |
 | `Makefile` | `prod`/`dev`: auto-start Docker Desktop if needed, then build + run; `stop`: `--profile dev down`; `test`: `npm test`; `audit`: `npm audit`; `scan`: 4-stage security scan |
 | `.github/workflows/ci.yml` | CI: `test` job (Jest) + `security` job (npm audit, trivy, semgrep, gitleaks) run in parallel on push/PR |
+| `.trivyignore` | Suppressed trivy CVEs — OS-level findings in Alpine pending upstream fixes; remove entries once the base image includes the patched versions |
 
 The `dev` service bind-mounts the source directory; an anonymous volume at `/app/node_modules` prevents the host's modules from shadowing the container-compiled ones. nginx is not used in dev mode.
 

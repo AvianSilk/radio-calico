@@ -44,7 +44,7 @@ scan:
 	for image in radiocalico-app:latest radiocalico-nginx:latest; do \
 		if docker image inspect $$image > /dev/null 2>&1; then \
 			echo "--- $$image ---"; \
-			docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy image --severity HIGH,CRITICAL --exit-code 1 $$image || status=1; \
+			docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(CURDIR)/.trivyignore:/.trivyignore" ghcr.io/aquasecurity/trivy image --ignorefile /.trivyignore --severity HIGH,CRITICAL --exit-code 1 $$image || status=1; \
 		else \
 			echo "$$image not found — skipping (run 'make prod' first)"; \
 		fi; \

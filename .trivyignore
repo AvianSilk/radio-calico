@@ -1,0 +1,12 @@
+# Suppressed CVEs — reviewed and accepted pending upstream fixes
+# These are OS-level vulnerabilities in the Alpine base image with fix versions
+# that have not yet shipped. They will be resolved automatically when the base
+# image is updated. Remove entries here once the base image contains the fix.
+
+# openssl: NULL pointer dereference in CMS — fix in openssl 3.5.6-r0 (not yet in Alpine)
+# Affects: libcrypto3, libssl3 in node:22-alpine and nginx:1.29-alpine
+CVE-2026-28390
+
+# zlib: buffer overflow in untgz utility — fix in zlib 1.3.2-r0 (not yet in Alpine)
+# Affects: zlib in node:22-alpine and nginx:1.29-alpine
+CVE-2026-22184

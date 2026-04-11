@@ -44,6 +44,7 @@ jobs:
           image-ref: radiocalico-app:latest
           severity: HIGH,CRITICAL
           exit-code: '1'
+          trivyignores: .trivyignore
 
       - name: Trivy — radiocalico-nginx
         uses: aquasecurity/trivy-action@master
@@ -51,6 +52,7 @@ jobs:
           image-ref: radiocalico-nginx:latest
           severity: HIGH,CRITICAL
           exit-code: '1'
+          trivyignores: .trivyignore
 
       - name: Semgrep SAST
         uses: semgrep/semgrep-action@v1
