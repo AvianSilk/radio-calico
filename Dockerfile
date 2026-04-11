@@ -30,7 +30,7 @@ EXPOSE 3000
 CMD ["npm", "start"]
 
 # ── nginx: serves public/ statically, proxies /api/* to the app container ─────
-FROM nginx:1.27-alpine AS nginx
+FROM nginx:1.29-alpine AS nginx
 COPY public/ /usr/share/nginx/html/
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

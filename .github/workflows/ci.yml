@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history required for gitleaks git scan
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: npm audit
+        run: npm audit --audit-level=high
+
+      - name: Build Docker images
+        run: docker compose build app nginx
+
+      - name: Trivy — radiocalico-app
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: radiocalico-app:latest
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+      - name: Trivy — radiocalico-nginx
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: radiocalico-nginx:latest
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+      - name: Semgrep SAST
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/nodejs
+            p/secrets
+
+      - name: Gitleaks secrets scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

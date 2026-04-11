@@ -21,6 +21,8 @@ make dev           # build dev image + start Express/postgres attached, hot-relo
 make stop          # stop all containers
 make stop VOLUMES=1  # stop all containers and wipe the postgres data volume
 make test          # run Jest suite (no Docker needed)
+make audit         # npm audit at high/critical threshold
+make scan          # full 4-stage security scan: npm audit + trivy (image CVEs) + semgrep (SAST) + gitleaks (secrets); requires built images
 
 # Without Docker (requires DATABASE_URL set)
 npm run dev        # development — nodemon auto-restarts on file save (http://localhost:3000)
@@ -76,7 +78,8 @@ Schema is created automatically on startup via `CREATE TABLE IF NOT EXISTS` in `
 | `Dockerfile` | Five stages: `deps-prod`, `deps-all`, `dev` (nodemon), `prod` (Express API), `nginx` (static + proxy) |
 | `docker-compose.yml` | `postgres` + `app` (Express, internal `expose: 3000`) + `nginx` (public `ports: 80`) + `dev` (profile: `dev`) |
 | `nginx/nginx.conf` | Serves `public/` directly; proxies `/api/*` to `http://app:3000` |
-| `Makefile` | `prod`/`dev`: auto-start Docker Desktop if needed, then build + run; `stop`: `--profile dev down`; `test`: `npm test` |
+| `Makefile` | `prod`/`dev`: auto-start Docker Desktop if needed, then build + run; `stop`: `--profile dev down`; `test`: `npm test`; `audit`: `npm audit`; `scan`: 4-stage security scan |
+| `.github/workflows/ci.yml` | CI: `test` job (Jest) + `security` job (npm audit, trivy, semgrep, gitleaks) run in parallel on push/PR |
 
 The `dev` service bind-mounts the source directory; an anonymous volume at `/app/node_modules` prevents the host's modules from shadowing the container-compiled ones. nginx is not used in dev mode.
 
@@ -106,7 +109,7 @@ Always assign **AvianSilk** as the assignee on every pull request (`--add-assign
 
 ## Stack
 
-- nginx 1.27-alpine (web server / reverse proxy)
+- nginx 1.29-alpine (web server / reverse proxy)
 - Node.js v22, Express v5, `pg` (PostgreSQL client), nodemon (dev only)
 - Frontend: vanilla JS + HLS.js (CDN), no bundler
 - Fonts: Montserrat + Open Sans via Google Fonts
