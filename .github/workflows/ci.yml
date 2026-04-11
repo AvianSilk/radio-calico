@@ -21,6 +21,9 @@ jobs:
   security:
     name: Security scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read  # required by gitleaks-action to fetch PR commits
     steps:
       - uses: actions/checkout@v4
         with:
