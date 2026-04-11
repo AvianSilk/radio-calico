@@ -36,7 +36,9 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Build Docker images
-        run: docker compose build app nginx
+        run: |
+          docker build --target prod  -t radiocalico-app:latest   .
+          docker build --target nginx -t radiocalico-nginx:latest .
 
       - name: Trivy — radiocalico-app
         uses: aquasecurity/trivy-action@master
