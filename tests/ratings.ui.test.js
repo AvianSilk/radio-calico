@@ -60,6 +60,13 @@ beforeAll(() => {
   // is a no-op and does not change any state.
   global.fetch = jest.fn().mockResolvedValue({ ok: false });
 
+  // Suppress console noise from error-path tests (e.g. "submitRating: no
+  // current song key", "fetchRatings: Error: network error"). No test asserts
+  // on console output; resetAllMocks() in afterEach clears the implementation
+  // but keeps the spy, so calls continue to be intercepted silently.
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+
   // Prevent setInterval(fetchMetadata, 10000) from ticking during tests.
   jest.useFakeTimers();
 

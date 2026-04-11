@@ -53,6 +53,13 @@ beforeAll(() => {
   // Default fetch: non-ok so the initial fetchMetadata() call is a no-op.
   global.fetch = jest.fn().mockResolvedValue({ ok: false });
 
+  // Suppress console noise from error-path tests (e.g. "fetchMetadata: Error:
+  // network error"). No test asserts on console output; resetAllMocks() in
+  // afterEach clears the implementation but keeps the spy, so calls continue
+  // to be intercepted silently.
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+
   jest.useFakeTimers();
 
   const script = fs.readFileSync(

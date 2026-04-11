@@ -15,22 +15,20 @@ A web-based radio player for a live HLS audio stream. Users can listen to the st
 ## Commands
 
 ```bash
-# Without Docker (requires DATABASE_URL set)
-npm run dev   # development — nodemon auto-restarts on file save
-npm start     # production — plain node, no watching
+# Preferred — Docker via Make
+make prod          # build images + start postgres/app/nginx in background (http://localhost:80)
+make dev           # build dev image + start Express/postgres attached, hot-reload (http://localhost:3000)
+make stop          # stop all containers
+make stop VOLUMES=1  # stop all containers and wipe the postgres data volume
+make test          # run Jest suite (no Docker needed)
 
-# With Docker
-./start.sh          # build + start production (detached)
-./start-dev.sh      # build + start dev with hot-reload (attached)
-./stop.sh           # stop all containers
-./stop.sh --volumes # stop and delete the postgres data volume
+# Without Docker (requires DATABASE_URL set)
+npm run dev        # development — nodemon auto-restarts on file save (http://localhost:3000)
+npm start          # production — plain node, no watching (http://localhost:3000)
+npm test           # run Jest suite
 ```
 
-Server runs at `http://localhost:3000`. Override with `PORT` env var.
-
-**Stopping**: `Ctrl+C` in the terminal, or `lsof -i :3000` → `kill <PID>` if backgrounded.
-
-Run tests with `npm test` (Jest). All test files live in `tests/`.
+**Stopping a foreground process**: `Ctrl+C`, or `lsof -i :3000` → `kill <PID>` if backgrounded.
 
 ## Architecture
 
@@ -78,9 +76,7 @@ Schema is created automatically on startup via `CREATE TABLE IF NOT EXISTS` in `
 | `Dockerfile` | Five stages: `deps-prod`, `deps-all`, `dev` (nodemon), `prod` (Express API), `nginx` (static + proxy) |
 | `docker-compose.yml` | `postgres` + `app` (Express, internal `expose: 3000`) + `nginx` (public `ports: 80`) + `dev` (profile: `dev`) |
 | `nginx/nginx.conf` | Serves `public/` directly; proxies `/api/*` to `http://app:3000` |
-| `start.sh` | `docker compose build app nginx` + `docker compose up -d` |
-| `start-dev.sh` | `docker compose --profile dev up dev` (attached, Express on port 3000 directly) |
-| `stop.sh` | `docker compose --profile dev down` (pass `--volumes` to wipe DB) |
+| `Makefile` | `prod`/`dev`: auto-start Docker Desktop if needed, then build + run; `stop`: `--profile dev down`; `test`: `npm test` |
 
 The `dev` service bind-mounts the source directory; an anonymous volume at `/app/node_modules` prevents the host's modules from shadowing the container-compiled ones. nginx is not used in dev mode.
 
@@ -101,7 +97,8 @@ All frontend test files share the same loading strategy: `window.eval(script)` i
 - Player tests use `clearAllMocks()` (not `reset`) so the Hls constructor mock and `isSupported` implementation are preserved across tests.
 - Timer tests mock `performance.now` via `jest.spyOn` — provide the value captured by `startTimer` as `mockReturnValueOnce(0)`, then `mockReturnValue(elapsedMs)` for the interval callback.
 - supertest v7 requires `.set()` to be chained after the HTTP method (e.g. `.get(url).set(...)`), not before.
-- The API test mock uses a closure (`let _mockPool`) initialised in `beforeAll` — the jest.mock factory runs at require time but the closure is evaluated at call time, so `_mockPool` is always defined when queries run.
+- The API test mock uses a closure (`let mockPool`) initialised in `beforeAll` — the jest.mock factory runs at require time but the closure is evaluated at call time, so `mockPool` is always defined when queries run. Jest requires the variable name to start with `mock` (case-insensitive) to allow out-of-scope access inside a mock factory.
+- `console.error` and `console.warn` are silenced in `beforeAll` of the frontend test files via `jest.spyOn(console, 'error').mockImplementation(() => {})`. Error-path tests deliberately trigger those calls in production code; suppressing them keeps test output clean. After `jest.resetAllMocks()` runs in `afterEach`, the spy's implementation is cleared but the spy itself stays in place, so subsequent calls are still intercepted silently.
 
 ## GitHub
 
