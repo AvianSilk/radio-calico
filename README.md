@@ -17,7 +17,7 @@ A web-based radio player for a live lossless HLS audio stream.
 
 | Layer | Technology |
 |---|---|
-| Web server | nginx 1.27 (static files + reverse proxy) |
+| Web server | nginx 1.29 (static files + reverse proxy) |
 | API server | Node.js v22, Express v5 |
 | Database | PostgreSQL via `pg` |
 | Frontend | Vanilla JS, HLS.js (CDN), no build step |
@@ -36,6 +36,8 @@ Use the Make targets for day-to-day workflow:
 | `make stop` | Stop all running containers (prod or dev). |
 | `make stop VOLUMES=1` | Stop all containers **and delete the postgres data volume**. Use this to reset the database to a clean state. |
 | `make test` | Run the full Jest test suite locally. No Docker or running database needed — the API tests use an in-memory Postgres instance. |
+| `make audit` | Run `npm audit` at the high/critical threshold. Exits non-zero if any high or critical vulnerability is found in npm dependencies. |
+| `make scan` | Full four-stage security scan: npm audit → Docker image CVE scan (trivy) → SAST (semgrep) → secrets detection (gitleaks). All stages run before reporting; exits non-zero if any findings are detected. Requires built images — run `make prod` first. |
 
 #### Changing the port
 
@@ -99,7 +101,8 @@ Runs the full Jest suite (99 tests across 4 files, ~0.6 s). No Docker or running
 | `Dockerfile` | Multi-stage build: `deps-prod`, `deps-all`, `dev`, `prod` (Express), `nginx` |
 | `docker-compose.yml` | `postgres` + `app` (Express, internal only) + `nginx` (public) + `dev` (profile: `dev`) |
 | `nginx/nginx.conf` | nginx server block: static files from `public/`, `/api/*` proxied to `app:3000` |
-| `Makefile` | `make prod`, `make dev`, `make stop`, `make test` — the primary way to run the project |
+| `Makefile` | `make prod`, `make dev`, `make stop`, `make test`, `make audit`, `make scan` — the primary way to run the project |
+| `.github/workflows/ci.yml` | CI pipeline: `test` job (Jest) and `security` job (npm audit + trivy + semgrep + gitleaks) run in parallel on every push and PR |
 
 The `DATABASE_URL` environment variable is set automatically inside containers. When running locally without Docker, set it yourself (see above).
 
