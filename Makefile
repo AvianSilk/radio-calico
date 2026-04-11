@@ -1,6 +1,6 @@
 DOCKER_TIMEOUT := 60
 
-.PHONY: prod dev stop test ensure-docker
+.PHONY: prod dev stop test audit scan ensure-docker
 
 ## Start production: build images + start postgres/app/nginx in background (http://localhost:80)
 prod: ensure-docker
@@ -27,6 +27,41 @@ stop:
 ## Run the Jest test suite (no Docker needed)
 test:
 	npm test
+
+## Run npm security audit (fails on high or critical vulnerabilities)
+audit:
+	npm audit --audit-level=high
+
+## Full security scan: dependency audit + Docker image CVEs (high/critical) + SAST + secrets
+## Docker images must exist — run 'make prod' first if they don't
+## All four stages always run; exits 1 if any stage found issues
+scan:
+	@status=0; \
+	echo "══ 1/4  npm audit ════════════════════════════════════════════════════════════"; \
+	npm audit --audit-level=high || status=1; \
+	echo ""; \
+	echo "══ 2/4  Docker image CVE scan (high + critical only) ════════════════════════"; \
+	for image in radiocalico-app:latest radiocalico-nginx:latest; do \
+		if docker image inspect $$image > /dev/null 2>&1; then \
+			echo "--- $$image ---"; \
+			docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy image --severity HIGH,CRITICAL --exit-code 1 $$image || status=1; \
+		else \
+			echo "$$image not found — skipping (run 'make prod' first)"; \
+		fi; \
+	done; \
+	echo ""; \
+	echo "══ 3/4  SAST — semgrep (nodejs security rules) ══════════════════════════════"; \
+	docker run --rm -v "$(CURDIR):/src" semgrep/semgrep semgrep scan --config=p/nodejs --config=p/secrets --error /src || status=1; \
+	echo ""; \
+	echo "══ 4/4  Secrets scan — gitleaks ════════════════════════════════════════════"; \
+	docker run --rm -v "$(CURDIR):/path" ghcr.io/gitleaks/gitleaks:latest detect --source=/path || status=1; \
+	echo ""; \
+	if [ $$status -ne 0 ]; then \
+		echo "Security scan complete. Findings were detected — review the output above."; \
+		echo "(make will report 'Error 1' below — this is expected and means findings were detected, not that the scan itself failed)"; \
+		exit 1; \
+	fi; \
+	echo "All security checks passed."
 
 # ── internal: start Docker Desktop if it isn't already running ────────────────
 ensure-docker:
