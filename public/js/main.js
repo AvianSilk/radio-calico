@@ -44,13 +44,15 @@ function totalElapsed() {
   return Math.floor((performance.now() - startedAt) / 1000);
 }
 
+function tickElapsed() {
+  elapsedEl.textContent = formatTime(totalElapsed());
+}
+
 function startTimer() {
   clearInterval(timerInterval);
   startedAt = performance.now();
   elapsedEl.textContent = '0:00';
-  timerInterval = setInterval(() => {
-    elapsedEl.textContent = formatTime(totalElapsed());
-  }, 1000);
+  timerInterval = setInterval(tickElapsed, 1000);
 }
 
 function pauseTimerDisplay() {
@@ -60,10 +62,8 @@ function pauseTimerDisplay() {
 
 function resumeTimerDisplay() {
   clearInterval(timerInterval);
-  elapsedEl.textContent = formatTime(totalElapsed());
-  timerInterval = setInterval(() => {
-    elapsedEl.textContent = formatTime(totalElapsed());
-  }, 1000);
+  tickElapsed();
+  timerInterval = setInterval(tickElapsed, 1000);
 }
 
 function stopTimer() {

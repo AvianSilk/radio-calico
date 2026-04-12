@@ -11,62 +11,12 @@
 
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
-
-// ── DOM fixture ───────────────────────────────────────────────────────────────
-
-const MINIMAL_HTML = `
-  <audio id="audio"></audio>
-  <button id="playBtn"></button>
-  <span   id="iconPlay"></span>
-  <span   id="iconPause" style="display:none"></span>
-  <span   id="status" class="topnav-status">Stopped</span>
-  <div    id="visualizer"></div>
-  <input  id="volume" type="range" min="0" max="1" step="0.01" value="1" />
-  <span   id="elapsed">0:00</span>
-  <img    id="album-art" />
-  <span   id="meta-title"></span>
-  <span   id="meta-artist"></span>
-  <span   id="meta-album"></span>
-  <span   id="tag-new"      style="display:none"></span>
-  <span   id="tag-summer"   style="display:none"></span>
-  <span   id="tag-vidgames" style="display:none"></span>
-  <span   id="stream-quality"></span>
-  <ul     id="history-list"></ul>
-  <button id="btn-like"></button>
-  <button id="btn-dislike"></button>
-  <span   id="count-likes">0</span>
-  <span   id="count-dislikes">0</span>
-`;
+const { setupMainJs, meta } = require('./helpers/ui-setup');
 
 // ── One-time setup ────────────────────────────────────────────────────────────
 
 beforeAll(() => {
-  document.body.innerHTML = MINIMAL_HTML;
-
-  window.HTMLMediaElement.prototype.play  = jest.fn().mockResolvedValue(undefined);
-  window.HTMLMediaElement.prototype.pause = jest.fn();
-
-  global.Hls = { isSupported: () => false, Events: {} };
-
-  // Default fetch: non-ok so the initial fetchMetadata() call is a no-op.
-  global.fetch = jest.fn().mockResolvedValue({ ok: false });
-
-  // Suppress console noise from error-path tests (e.g. "fetchMetadata: Error:
-  // network error"). No test asserts on console output; resetAllMocks() in
-  // afterEach clears the implementation but keeps the spy, so calls continue
-  // to be intercepted silently.
-  jest.spyOn(console, 'error').mockImplementation(() => {});
-  jest.spyOn(console, 'warn').mockImplementation(() => {});
-
-  jest.useFakeTimers();
-
-  const script = fs.readFileSync(
-    path.join(__dirname, '../public/js/main.js'),
-    'utf8'
-  );
-  window.eval(script); // eslint-disable-line no-eval
+  setupMainJs();
 });
 
 // resetAllMocks drains any unconsumed mockResolvedValueOnce queue entries so
@@ -80,21 +30,6 @@ afterEach(() => {
   document.getElementById('meta-album').textContent  = '';
   document.getElementById('album-art').src           = '';
 });
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Minimal metadata object – only the fields relevant to the test need values. */
-function meta(overrides = {}) {
-  return {
-    artist: 'Default Artist',
-    title:  'Default Title',
-    album:  'Default Album',
-    date:   '2024',
-    is_new: false, is_summer: false, is_vidgames: false,
-    sample_rate: 44100, bit_depth: 16,
-    ...overrides,
-  };
-}
 
 // ── fetchMetadata ─────────────────────────────────────────────────────────────
 
