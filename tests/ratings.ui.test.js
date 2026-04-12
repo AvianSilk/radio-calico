@@ -15,67 +15,12 @@
 
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
-
-// ── DOM fixture ───────────────────────────────────────────────────────────────
-
-const MINIMAL_HTML = `
-  <audio id="audio"></audio>
-  <button id="playBtn"></button>
-  <span   id="iconPlay"></span>
-  <span   id="iconPause" style="display:none"></span>
-  <span   id="status" class="topnav-status"></span>
-  <div    id="visualizer"></div>
-  <input  id="volume" type="range" value="1" />
-  <span   id="elapsed">0:00</span>
-  <img    id="album-art" />
-  <span   id="meta-title"></span>
-  <span   id="meta-artist"></span>
-  <span   id="meta-album"></span>
-  <span   id="tag-new"      style="display:none"></span>
-  <span   id="tag-summer"   style="display:none"></span>
-  <span   id="tag-vidgames" style="display:none"></span>
-  <span   id="stream-quality"></span>
-  <ul     id="history-list"></ul>
-  <button id="btn-like"></button>
-  <button id="btn-dislike"></button>
-  <span   id="count-likes">0</span>
-  <span   id="count-dislikes">0</span>
-`;
+const { setupMainJs, meta } = require('./helpers/ui-setup');
 
 // ── One-time setup ────────────────────────────────────────────────────────────
 
 beforeAll(() => {
-  document.body.innerHTML = MINIMAL_HTML;
-
-  // jsdom does not implement HTMLMediaElement methods.
-  window.HTMLMediaElement.prototype.play  = jest.fn().mockResolvedValue(undefined);
-  window.HTMLMediaElement.prototype.pause = jest.fn();
-
-  // Hls is loaded from CDN at runtime; provide a minimal stub.
-  global.Hls = { isSupported: () => false, Events: {} };
-
-  // Default fetch: non-ok, so the fetchMetadata() call at script load time
-  // is a no-op and does not change any state.
-  global.fetch = jest.fn().mockResolvedValue({ ok: false });
-
-  // Suppress console noise from error-path tests (e.g. "submitRating: no
-  // current song key", "fetchRatings: Error: network error"). No test asserts
-  // on console output; resetAllMocks() in afterEach clears the implementation
-  // but keeps the spy, so calls continue to be intercepted silently.
-  jest.spyOn(console, 'error').mockImplementation(() => {});
-  jest.spyOn(console, 'warn').mockImplementation(() => {});
-
-  // Prevent setInterval(fetchMetadata, 10000) from ticking during tests.
-  jest.useFakeTimers();
-
-  // Load main.js via indirect eval so function declarations land on window/global.
-  const script = fs.readFileSync(
-    path.join(__dirname, '../public/js/main.js'),
-    'utf8'
-  );
-  window.eval(script); // eslint-disable-line no-eval
+  setupMainJs();
 });
 
 // Reset fetch mock and counts between tests.
@@ -93,16 +38,6 @@ afterEach(() => {
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Build a metadata object. Only artist/title are required for ratings logic. */
-function meta(artist, title, extras = {}) {
-  return {
-    artist, title, album: 'Test Album', date: '2024',
-    is_new: false, is_summer: false, is_vidgames: false,
-    sample_rate: 44100, bit_depth: 16,
-    ...extras,
-  };
-}
 
 /** Mock a successful ratings API response. */
 function ratingsResponse(data) {
@@ -215,7 +150,7 @@ describe('submitRating', () => {
     songCount++;
     // afterEach already called resetAllMocks() so the queue is empty and
     // global.fetch.mockResolvedValue({ ok: false }) is the active default.
-    global.updateMetadata(meta(`Submit Artist ${songCount}`, `Submit Song ${songCount}`));
+    global.updateMetadata(meta({ artist: `Submit Artist ${songCount}`, title: `Submit Song ${songCount}` }));
     // Wait for the fetchRatings promise chain (2 micro-task ticks):
     //   tick 1 – fetch() resolves → ok:false, tick 2 – async fn returns
     await Promise.resolve();
@@ -269,7 +204,7 @@ describe('updateMetadata', () => {
   let counter = 0;
   function uniqueMeta(extras = {}) {
     counter += 1;
-    return meta(`Unique Artist ${counter}`, `Unique Title ${counter}`, extras);
+    return meta({ artist: `Unique Artist ${counter}`, title: `Unique Title ${counter}`, ...extras });
   }
 
   beforeEach(() => {
@@ -277,10 +212,10 @@ describe('updateMetadata', () => {
   });
 
   test('updates the title, artist, and album/date display', () => {
-    global.updateMetadata(meta('Miles Davis', `Kind of Blue ${++counter}`));
+    global.updateMetadata(meta({ artist: 'Miles Davis', title: `Kind of Blue ${++counter}` }));
     expect(document.getElementById('meta-title').textContent).toBe(`Kind of Blue ${counter}`);
     expect(document.getElementById('meta-artist').textContent).toBe('Miles Davis');
-    expect(document.getElementById('meta-album').textContent).toContain('Test Album');
+    expect(document.getElementById('meta-album').textContent).toContain('Default Album');
     expect(document.getElementById('meta-album').textContent).toContain('2024');
   });
 

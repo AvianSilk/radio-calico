@@ -17,6 +17,14 @@ async function getCounts(song_key) {
   return rows[0];
 }
 
+async function getUserRating(userId, song_key) {
+  const { rows } = await db.query(
+    'SELECT rating FROM ratings WHERE user_id = $1 AND song_key = $2',
+    [userId, song_key]
+  );
+  return rows[0]?.rating ?? null;
+}
+
 // GET /api/ratings?song_key=...
 router.get('/', async (req, res) => {
   const { song_key } = req.query;
@@ -24,12 +32,9 @@ router.get('/', async (req, res) => {
 
   const userId = getUserId(req);
   const counts = await getCounts(song_key);
-  const { rows } = await db.query(
-    'SELECT rating FROM ratings WHERE user_id = $1 AND song_key = $2',
-    [userId, song_key]
-  );
+  const user_rating = await getUserRating(userId, song_key);
 
-  res.json({ likes: counts.likes, dislikes: counts.dislikes, user_rating: rows[0]?.rating ?? null });
+  res.json({ likes: counts.likes, dislikes: counts.dislikes, user_rating });
 });
 
 // POST /api/ratings  { song_key, rating: 1 | -1 }
@@ -40,12 +45,9 @@ router.post('/', async (req, res) => {
   }
 
   const userId = getUserId(req);
-  const { rows: existing } = await db.query(
-    'SELECT rating FROM ratings WHERE user_id = $1 AND song_key = $2',
-    [userId, song_key]
-  );
+  const existingRating = await getUserRating(userId, song_key);
 
-  if (existing[0]?.rating === rating) {
+  if (existingRating === rating) {
     // Same button clicked again — toggle off
     await db.query(
       'DELETE FROM ratings WHERE user_id = $1 AND song_key = $2',
@@ -60,12 +62,9 @@ router.post('/', async (req, res) => {
   }
 
   const counts = await getCounts(song_key);
-  const { rows } = await db.query(
-    'SELECT rating FROM ratings WHERE user_id = $1 AND song_key = $2',
-    [userId, song_key]
-  );
+  const user_rating = await getUserRating(userId, song_key);
 
-  res.json({ likes: counts.likes, dislikes: counts.dislikes, user_rating: rows[0]?.rating ?? null });
+  res.json({ likes: counts.likes, dislikes: counts.dislikes, user_rating });
 });
 
 module.exports = router;

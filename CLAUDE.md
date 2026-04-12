@@ -86,8 +86,9 @@ The `dev` service bind-mounts the source directory; an anonymous volume at `/app
 | `tests/ratings.ui.test.js` | Frontend — jsdom suite for `songKey`, `applyRatingUI`, `fetchRatings`, `submitRating`, and `updateMetadata` (happy path, tag/history/quality rendering, song-change detection). |
 | `tests/player.ui.test.js` | Frontend — jsdom suite for `formatTime`, `setStatus`, `setPlaying`, audio event listeners (`playing`/`waiting`/`pause`), volume slider, play/pause button (both states), and elapsed timer (`startTimer`, `stopTimer`, `pauseTimerDisplay`). |
 | `tests/metadata.ui.test.js` | Frontend — jsdom suite for `fetchMetadata` (URL shape, cache-bust timestamp, album-art update, non-ok/error handling) and `updateMetadata` edge cases (missing title/artist/album/date, partial history slots, tag independence). |
+| `tests/helpers/ui-setup.js` | Shared frontend test helpers: `MINIMAL_HTML` (canonical DOM fixture), `setupMainJs()` (common `beforeAll` setup sequence used by `ratings.ui` and `metadata.ui`), and `meta(overrides)` (metadata object builder). |
 
-All frontend test files share the same loading strategy: `window.eval(script)` in `beforeAll` (indirect eval — function declarations land on `global`), `Hls` / `fetch` / `HTMLMediaElement` mocked, `jest.useFakeTimers()` to freeze the metadata polling interval.
+All frontend test files share the same loading strategy: `window.eval(script)` in `beforeAll` (indirect eval — function declarations land on `global`), `Hls` / `fetch` / `HTMLMediaElement` mocked, `jest.useFakeTimers()` to freeze the metadata polling interval. `ratings.ui.test.js` and `metadata.ui.test.js` delegate their `beforeAll` to `setupMainJs()`; `player.ui.test.js` keeps a custom `beforeAll` because it needs a full `jest.fn()` Hls constructor mock.
 
 **Key gotchas to keep in mind:**
 - `afterEach` must call `jest.resetAllMocks()` (not just `clearAllMocks`) to drain the `mockResolvedValueOnce` queue; leftover entries corrupt subsequent fetch calls.

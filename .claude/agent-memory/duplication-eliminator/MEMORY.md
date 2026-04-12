@@ -1,0 +1,2 @@
+- [RadioCalico Architecture Constraints](project_architecture.md) — no bundler frontend; single-file client JS; test deduplication via tests/helpers/; server via lib/
+- [Test Helper: ui-setup.js](refactoring_ui_setup.md) — MINIMAL_HTML and setupMainJs() extracted to tests/helpers/ui-setup.js; player.ui.test.js intentionally excluded

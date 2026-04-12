@@ -93,6 +93,7 @@ Runs the full Jest suite (99 tests across 4 files, ~0.6 s). No Docker or running
 | `tests/ratings.ui.test.js` | `songKey`, `applyRatingUI`, `fetchRatings`, `submitRating`, `updateMetadata` |
 | `tests/player.ui.test.js` | `formatTime`, audio events, volume slider, play/pause button, elapsed timer |
 | `tests/metadata.ui.test.js` | `fetchMetadata` (URL, album art, error handling), `updateMetadata` edge cases |
+| `tests/helpers/ui-setup.js` | Shared DOM fixture, `beforeAll` setup helper, and metadata object builder used by the frontend suites |
 
 ## Docker details
 
