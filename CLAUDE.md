@@ -2,12 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Session
-
-**To resume the most recent session**: `claude --resume ca8722bd-abdd-4df1-af0f-c28dc8c85a96`
-
-At the end of every session, update the session ID above with the current session's ID. The session ID can be found by running: `ls ~/.claude/projects/-Users-venkataadapala-General-Code-radiocalico/`
-
 ## What this is
 
 A web-based radio player for a live HLS audio stream. Users can listen to the stream, see now-playing metadata, and like/dislike the currently playing song.
