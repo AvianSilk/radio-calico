@@ -115,3 +115,14 @@ The `DATABASE_URL` environment variable is set automatically inside containers. 
 | HLS stream | `https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8` |
 | Now-playing metadata | `https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json` |
 | Album art | `https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg` |
+
+## Credits
+
+The **Radio Calico concept, name, brand identity, and external resources** in this project were created by and belong to their respective owner. They were obtained from course material published at [sundog-soft.com](http://media.sundog-soft.com/Claude/RadioCalicoStyle.zip) and are **not** owned by the author of this repository. The idea for this website was borrowed from [radio-calico.com](https://www.radio-calico.com).
+
+This includes:
+- The "Radio Calico" name and logo (`RadioCalicoLogoTM.png`)
+- The brand and UI style guide (`RadioCalico_Style_Guide.txt`)
+- The HLS audio stream, metadata endpoint, and album art hosted on CloudFront
+
+The web player implementation (server code, frontend JS, Docker configuration, tests) was written independently and is the sole contribution of this repository's author.
