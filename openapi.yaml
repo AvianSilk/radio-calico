@@ -1,0 +1,170 @@
+openapi: 3.0.0
+info:
+  title: Radio Calico API
+  description: >-
+    API for the Radio Calico web radio player. Song keys use the format
+    `artist|||title`. Users are identified server-side by IP address — no
+    auth header required.
+  version: 1.0.0
+servers:
+  - url: http://localhost:80
+    description: Production (Docker + nginx)
+  - url: http://localhost:3000
+    description: Dev mode (Express direct)
+tags:
+  - name: Ratings
+paths:
+  /api/ratings:
+    get:
+      tags:
+        - Ratings
+      summary: Get ratings for a song
+      description: >-
+        Returns like/dislike counts and the current user's vote for the given
+        song key. Returns `user_rating: null` if the user has not voted.
+      parameters:
+        - name: song_key
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Song identifier in the format: artist|||title"
+          example: "Radiohead|||Karma Police"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatingsResponse'
+              examples:
+                with_votes:
+                  summary: 200 OK — with existing votes
+                  value:
+                    likes: 4
+                    dislikes: 1
+                    user_rating: 1
+                no_votes:
+                  summary: 200 OK — no votes yet
+                  value:
+                    likes: 0
+                    dislikes: 0
+                    user_rating: null
+        '400':
+          description: Bad Request — missing song_key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: song_key required
+    post:
+      tags:
+        - Ratings
+      summary: Submit or update a rating
+      description: >-
+        Submit a like (`rating: 1`) or dislike (`rating: -1`) for a song.
+        Submitting the same rating the user already has removes it (toggle off).
+        If the user previously submitted the opposite rating, it is replaced.
+        Returns updated counts and the user's current vote (`null` if toggled off).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingRequest'
+            examples:
+              like:
+                summary: Like a song
+                value:
+                  song_key: "Radiohead|||Karma Police"
+                  rating: 1
+              dislike:
+                summary: Dislike a song
+                value:
+                  song_key: "Radiohead|||Karma Police"
+                  rating: -1
+              invalid:
+                summary: Invalid — rating not 1 or -1
+                value:
+                  song_key: "Radiohead|||Karma Police"
+                  rating: 0
+      responses:
+        '200':
+          description: OK — rating submitted, updated, or toggled off
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatingsResponse'
+              examples:
+                liked:
+                  summary: Like submitted
+                  value:
+                    likes: 5
+                    dislikes: 1
+                    user_rating: 1
+                toggled_off:
+                  summary: Like toggled off
+                  value:
+                    likes: 4
+                    dislikes: 1
+                    user_rating: null
+                disliked:
+                  summary: Dislike submitted
+                  value:
+                    likes: 4
+                    dislikes: 2
+                    user_rating: -1
+        '400':
+          description: Bad Request — missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: song_key and rating (1 or -1) required
+
+components:
+  schemas:
+    RatingsResponse:
+      type: object
+      required:
+        - likes
+        - dislikes
+        - user_rating
+      properties:
+        likes:
+          type: integer
+          minimum: 0
+          description: Total number of likes for the song
+        dislikes:
+          type: integer
+          minimum: 0
+          description: Total number of dislikes for the song
+        user_rating:
+          type: integer
+          nullable: true
+          enum: [1, -1, null]
+          description: The current user's vote (1, -1, or null if not voted)
+    RatingRequest:
+      type: object
+      required:
+        - song_key
+        - rating
+      properties:
+        song_key:
+          type: string
+          description: "Song identifier in the format: artist|||title"
+          example: "Radiohead|||Karma Police"
+        rating:
+          type: integer
+          enum: [1, -1]
+          description: "1 for like, -1 for dislike"
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message

@@ -1,0 +1,171 @@
+{
+  "info": {
+    "name": "Radio Calico API",
+    "_postman_id": "radiocalico-api-v1",
+    "description": "API collection for the Radio Calico web radio player. Song keys use the format `artist|||title`. Users are identified server-side by IP address — no auth header required.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:80",
+      "description": "Production (Docker + nginx). Switch to http://localhost:3000 for dev mode."
+    },
+    {
+      "key": "song_key",
+      "value": "Radiohead|||Karma Police",
+      "description": "Format: artist|||title"
+    }
+  ],
+  "item": [
+    {
+      "name": "Ratings",
+      "item": [
+        {
+          "name": "Get ratings for a song",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings?song_key={{song_key}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ratings"],
+              "query": [
+                {
+                  "key": "song_key",
+                  "value": "{{song_key}}",
+                  "description": "artist|||title"
+                }
+              ]
+            },
+            "description": "Returns like/dislike counts and the current user's vote for the given song key. Returns `user_rating: null` if the user has not voted."
+          },
+          "response": [
+            {
+              "name": "200 OK — with existing votes",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"likes\": 4,\n  \"dislikes\": 1,\n  \"user_rating\": 1\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "200 OK — no votes yet",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"likes\": 0,\n  \"dislikes\": 0,\n  \"user_rating\": null\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 Bad Request — missing song_key",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"song_key required\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Like a song",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"song_key\": \"{{song_key}}\",\n  \"rating\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ratings"]
+            },
+            "description": "Submit a like (`rating: 1`). If the user has already liked this song, the like is removed (toggle off). If the user previously disliked it, the vote is updated to a like. Returns updated counts and the user's current vote (`null` if toggled off)."
+          },
+          "response": [
+            {
+              "name": "200 OK — like submitted",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"likes\": 5,\n  \"dislikes\": 1,\n  \"user_rating\": 1\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "200 OK — like toggled off",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"likes\": 4,\n  \"dislikes\": 1,\n  \"user_rating\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Dislike a song",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"song_key\": \"{{song_key}}\",\n  \"rating\": -1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ratings"]
+            },
+            "description": "Submit a dislike (`rating: -1`). Same toggle behaviour as the like endpoint — submitting the same rating twice removes it."
+          },
+          "response": [
+            {
+              "name": "200 OK — dislike submitted",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"likes\": 4,\n  \"dislikes\": 2,\n  \"user_rating\": -1\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "POST ratings — invalid body",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"song_key\": \"{{song_key}}\",\n  \"rating\": 0\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ratings"]
+            },
+            "description": "Demonstrates the 400 response when `rating` is not `1` or `-1`, or when `song_key` is missing."
+          },
+          "response": [
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"song_key and rating (1 or -1) required\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
